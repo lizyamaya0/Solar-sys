@@ -1,3 +1,4 @@
+import itertools
 import math
 import turtle
 
@@ -29,7 +30,12 @@ class SolarSystemBody(turtle.Turtle):
         solar_system.add_body(self)
 
     def draw(self):
+        self.clear()
         self.dot(self.display_size)
+
+    def move(self):
+        self.setx(self.xcor() + self.velocity[0])
+        self.sety(self.ycor() + self.velocity[1])
 
 
 class Sun(SolarSystemBody):
@@ -46,7 +52,17 @@ class Sun(SolarSystemBody):
 
 
 class Planet(SolarSystemBody):
-    ...
+    colours = itertools.cycle(["red", "green", "blue"])
+
+    def __init__(
+            self,
+            solar_system,
+            mass,
+            position=(0, 0),
+            velocity=(0, 0),
+    ):
+        super().__init__(solar_system, mass, position, velocity)
+        self.color(next(Planet.colours))
 
 
 # Solar System
@@ -64,3 +80,27 @@ class SolarSystem:
 
     def remove_body(self, body):
         self.bodies.remove(body)
+
+    def update_all(self):
+        for body in self.bodies:
+            body.move()
+            body.draw()
+        self.solar_system.update()
+
+    @staticmethod
+    def accelerate_due_to_gravity(
+            first: SolarSystemBody,
+            second: SolarSystemBody,
+    ):
+        force = first.mass * second.mass / first.distance(second) ** 2
+        angle = first.towards(second)
+        reverse = 1
+        for body in first, second:
+            acceleration = force / body.mass
+            acc_x = acceleration * math.cos(math.radians(angle))
+            acc_y = acceleration * math.sin(math.radians(angle))
+            body.velocity = (
+                body.velocity[0] + (reverse * acc_x),
+                body.velocity[1] + (reverse * acc_y),
+            )
+            reverse = -1
